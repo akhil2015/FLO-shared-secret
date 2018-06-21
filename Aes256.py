@@ -4,10 +4,10 @@ from Crypto.Cipher import AES
 
 def pad(data):
     padding = 16 - len(data) % 16
-    return data + padding * chr(padding)
+    return data + padding * ' '
 
 def unpad(data):
-    return data[0:-ord(data[-1])]
+    return data[:length]
 
 def keyGen():
     #Generating random key of 32 bytes
@@ -33,6 +33,7 @@ def decryptMsg(ciphertext, key):
     
 
 msg=input('Enter The Message To Be Encrypted : ')
+length=len(msg)
 key = keyGen()
 print("Key generated : "+str(key))
 ciphertext = encryptMsg(msg,key)
