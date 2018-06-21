@@ -29,13 +29,13 @@ def decryptMsg(ciphertext, key):
     IV = 16*'\x00'
     #Creation of encryptor and decryptor object using above details 
     cipher=AES.new(key,AES.MODE_CBC,IV)
-    return unpad(cipher.decrypt(cipher));
+    return unpad(cipher.decrypt(ciphertext));
     
 
 msg=input('Enter The Message To Be Encrypted : ')
 key = keyGen()
 print("Key generated : "+str(key))
 ciphertext = encryptMsg(msg,key)
-print("Encrypted Text : "+str(ciphertext.encode(hex)))
+print("Encrypted Text : "+str(ciphertext))
 plaintext = decryptMsg(ciphertext, key)
 print("Decrypted Text : "+str(plaintext))
