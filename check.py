@@ -1,6 +1,6 @@
+#!/usr/bin/env python3
 from secretsharing import PlaintextToHexSecretSharer
-import subprocess
-import json
+import base64
 import os
 from Crypto.Cipher import AES
 
@@ -66,9 +66,8 @@ while(True):
     else:
         print("Please Choose Correct Pair Of values bcoz threshold<=split and threshold>=2")
 
-#Formatting key inorder to remove b' at the beginning and ' in the end
-key_formatted=str(key)
-key_formatted=key_formatted[2:-1]
+#Formatting key inorder to convert bytes of string using base64
+key_formatted=base64.b64encode(key).decode('utf-8')
 print("Formatted Key="+key_formatted)
 #Generating shares of formatted key
 shared_key=splitSecret(key_formatted,threshold,splits)
@@ -76,8 +75,8 @@ print("Shared Keys="+str(shared_key))
 
 #Recovering Keys using first threshold
 recovered_key=recoverSecret(shared_key[:threshold])
-#Converting recovered_key to bytes
-recovered_key=recovered_key.encode()
+#Converting recovered_key to bytes using base64 module
+recovered_key=base64.b64decode(recovered_key)
 print("Recovered Key="+str(recovered_key))
 print(type(recovered_key))
 
