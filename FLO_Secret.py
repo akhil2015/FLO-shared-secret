@@ -15,10 +15,14 @@ def splitSecret(secret,threshold,splits):
     #Formatting key inorder to convert bytes of string using base64
     secret = base64.b64encode(secret).decode('utf-8')
     shares = PlaintextToHexSecretSharer.split_secret(secret, threshold, splits)
+    for i in range(splits):
+        shares[i]=base64.b64encode(shares[i].encode('utf-8')).decode('utf-8')
     return shares
 
 # This function recovers the secret using the list of shares and returns the reconstructed secret
 def recoverSecret(shares):
+    for i in range(len(shares)):
+        shares[i] = (base64.b64decode(shares[i])).decode('utf-8')
     secret = PlaintextToHexSecretSharer.recover_secret(shares)
     #Converting recovered_key to bytes using base64 module
     secret=base64.b64decode(secret)
@@ -40,22 +44,26 @@ def keyGen():
 
 
 def encryptMsg(plaintext, key):
-    # Initialization vector in AES should be 16 bytes
-    IV = 16 * '\x00'
-    # Creation of encryptor and decryptor object using above details
+    # Genarating Initialization vector for AES (16 bytes)
+    IV = os.urandom(16)
+    # Encrypting The plaintext
     cipher = AES.new(key, AES.MODE_CBC, IV)
+    plaintext=base64.b64encode(plaintext.encode('utf-8')).decode('utf-8')
     ciphertext = cipher.encrypt(pad(plaintext))
-    ciphertext = base64.b64encode(ciphertext).decode('utf-8')
+    # Append IV and Ciphertext
+    ciphertext = base64.b64encode(IV).decode('utf-8') + base64.b64encode(ciphertext).decode('utf-8')
     return ciphertext
 
 
 def decryptMsg(ciphertext, key):
     # Initialization vector in AES should be 16 bytes
-    IV = 16 * '\x00'
+    IV = base64.b64decode(ciphertext[:24])
+    ciphertext=base64.b64decode(ciphertext[24:])
     # Creation of encryptor and decryptor object using above details
     cipher = AES.new(key, AES.MODE_CBC, IV)
-    ciphertext=base64.b64decode(ciphertext)
-    return unpad(cipher.decrypt(ciphertext));
+    plaintext=unpad(cipher.decrypt(ciphertext));
+    plaintext = (base64.b64decode(plaintext)).decode('utf-8')
+    return plaintext
 
 def writeUnitToBlockchain(text,receiver):
     txid = subprocess.check_output(["flo-cli","--testnet", "sendtoaddress",receiver,"0.01",'""','""',"true","false","10",'UNSET',str(text)])
@@ -75,9 +83,9 @@ def readUnitFromBlockchain(txid):
 def writeDatatoBlockchain(text):
     n_splits = len(text)//350 + 1               #number of splits to be created
     splits = list(sliced(text, 350))          #create a sliced list of strings
-    for split in splits:
-        print(split)
-    print('no.of splits: '+str(n_splits))
+    #for split in splits:
+    #    print(split)
+    #print('no.of splits: '+str(n_splits))
     tail = writeUnitToBlockchain(splits[n_splits-1],'oV9ZoREBSV5gFcZTBEJ7hdbCrDLSb4g96i')      #create a transaction which will act as a tail for the data
     cursor = tail
     if n_splits == 1:
@@ -86,7 +94,7 @@ def writeDatatoBlockchain(text):
     #for each string in the list create a transaction with txid of previous string
     for i in range(n_splits-2,-1,-1):
         splits[i] = 'next:'+cursor+" "+splits[i]
-        print(splits[i])
+        #print(splits[i])
         cursor = writeUnitToBlockchain(splits[i],'oV9ZoREBSV5gFcZTBEJ7hdbCrDLSb4g96i')
     return cursor
 
@@ -95,11 +103,11 @@ def readDatafromBlockchain(cursor):
     cursor_data = readUnitFromBlockchain(cursor)              
     while(cursor_data[:5]=='next:'):
         cursor = cursor_data[5:69]
-        print("fetching this transaction->>"+cursor)
+        #print("fetching this transaction->>"+cursor)
         text.append(cursor_data[70:])
         cursor_data = readUnitFromBlockchain(cursor)
     text.append(cursor_data)
-    print(text)
+    #print(text)
     text=('').join(text)
     return text
 
@@ -172,8 +180,8 @@ class GUI:
     def Encryption(self):
         splits = int(self.PE1.get())
         threshold = int(self.PE2.get())
-        if (threshold > splits) :
-            messagebox.showwarning("Invalid", "Total-Shares should be greater than or equal to Minimum-Shares-Required")
+        if (threshold > splits or threshold<2) :
+            messagebox.showwarning("Invalid!", "Minimum-Shares-Required should be greater than 2 and lesser than or equal to Total-Shares  ")
             return
         self.PE1.config(state='disabled')
         self.PE2.config(state='disabled')
@@ -181,13 +189,16 @@ class GUI:
         key = keyGen() 
         plaintext = self.PTextBox.get("1.0",'end-1c')
         shared_key = splitSecret(key,threshold,splits)
-        print("Shared Keys="+str(shared_key))
         ciphertext = encryptMsg(plaintext,key)
-        print("Encrypted Text : " + ciphertext)
-        txid = writeDatatoBlockchain(ciphertext)
+        try:
+            txid = writeDatatoBlockchain(ciphertext)
+        except:
+            messagebox.showerror("Connection Failed!", "Please run the node(Flo-Core)!")
+            return
+        print("Shared Keys="+str(shared_key))
         print('txid: ',txid)
         self.PNextButton.destroy()
-        messagebox.showinfo("Successful", "Your message is successfully encrypted!!!")
+        messagebox.showinfo("Successful!", "Your data is successfully encrypted and stored in the FLO Blockchain!")
 
         
 
@@ -199,7 +210,7 @@ class GUI:
         GL1.grid(row=1,column=1)
         self.GE1 = Spinbox(self.GetFrame, from_ = 2, to = 1000, validate="key", validatecommand=self.vcmd)
         self.GE1.grid(row=1,column=2)
-        GL2 = Label(self.GetFrame,text="Enter Transaction id : ")
+        GL2 = Label(self.GetFrame,text="Enter Transaction hash : ")
         GL2.grid(row=2,column=1)
         self.GE2 = Entry(self.GetFrame)
         self.GE2.grid(row=2,column=2)
@@ -210,6 +221,12 @@ class GUI:
         self.GBackButton.grid(row=3,column=1)
 
     def GetSharedKey(self):
+        try:
+            txid = self.GE2.get()
+            self.ciphertext = readDatafromBlockchain(txid)
+        except:
+            messagebox.showerror("Data retrieval Failed!", "Please enter valid transaction hash!\nAlso run the node(Flo-Core)!")
+            return
         self.numOfShares = int(self.GE1.get())
         self.GFindButton.destroy()
         self.GBackButton.destroy()
@@ -228,16 +245,14 @@ class GUI:
         self.GDecryptButton.grid(column=2)
 
     def DecryptMsg(self):
-        txid = self.GE2.get()
-        ciphertext = readDatafromBlockchain(txid)
         shares = [None] * self.numOfShares
         for i in range(self.numOfShares):
             shares[i] = self.GEArray[i].get()
         try:
             key=recoverSecret(shares) 
-            plaintext = decryptMsg(ciphertext,key)
+            plaintext = decryptMsg(self.ciphertext,key)
         except:
-            messagebox.showerror("Error", "Decryption Failed!!! Please insert the correct shared keys!")
+            messagebox.showerror("Decryption Failed!", "Please enter the correct shared keys!")
             return
         for i in range(self.numOfShares):
             shares[i] = self.GEArray[i].config(state='disabled')
@@ -246,18 +261,16 @@ class GUI:
         GL3 = Label(self.GetFrame, text="Found Secret Message")
         GL3.grid(column=1, columnspan=2)       
         GTextFrame = Frame(self.GetFrame)
-        GLMsg = Text(GTextFrame,height=10,width=50)
-        GLMsg.insert(INSERT, plaintext)
-        GLMsg.config(state='disabled')
+        self.GLMsg = Text(GTextFrame,height=10,width=50)
+        self.GLMsg.insert(END, plaintext)
+        self.GLMsg.config(state='disabled')
         GScroll = Scrollbar(GTextFrame)
-        GScroll.config( command = GLMsg.yview )
-        GLMsg.pack(side = LEFT)
+        GScroll.config( command = self.GLMsg.yview )
+        self.GLMsg.pack(side = LEFT)
         GScroll.pack(side = RIGHT,fill = Y)
         GTextFrame.grid(column=1,columnspan=2)
         self.GBackButton=Button(self.GetFrame,text="Back",command=self.Main)
-        self.GBackButton.grid(column=1)
-            
-        
+        self.GBackButton.grid(column=1)                  
 
 root = Tk()
 root.title("FloSecret")
