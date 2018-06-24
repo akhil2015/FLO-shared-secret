@@ -53,6 +53,45 @@ def decryptMsg(ciphertext, key):
     ciphertext=base64.b64decode(ciphertext)
     return unpad(cipher.decrypt(ciphertext));
 
+def writeUnitToBlockchain(text,receiver):
+    txid = subprocess.check_output(["flo-cli","--testnet", "sendtoaddress",receiver,"0.01",'""','""',"true","false","10",'UNSET',str(page_html)])
+    txid = str(txid)
+    txid = txid[2:-3]
+    return txid
+
+def readUnitFromBlockchain(txid):
+    rawtx = subprocess.check_output(["flo-cli","--testnet", "getrawtransaction", str(txid)])
+    rawtx = str(rawtx)
+    rawtx = rawtx[2:-3]
+    tx = subprocess.check_output(["flo-cli","--testnet", "decoderawtransaction", str(rawtx)])
+    content = json.loads(tx)
+    text = content['floData']
+    return text
+
+def writeDatatoBlockchain(text):
+    n_splits = len(text)//350 + 1               #number of splits to be created
+    splits = list(sliced(text, n_splits))       #create a sliced list of strings
+    tail = writeUnitToBlockchain(splits[n_splits])      #create a transaction which will act as a tail for the data
+    cursor = tail
+    if n_splits == 1:
+        return cursor                           #if only single transaction was created then tail is the cursor
+
+    #for each string in the list create a transaction with txid of previous string
+    for i in range(n_splits-1,0):
+        splits[i] = 'next:'+cursor+splits[i]
+        cursor = writeUnitToBlockchain(splits[i])
+    return cursor
+
+def readDatafromBlockchain(cursor):
+    text = []
+    cursor_data = readUnitFromBlockchain(cursor)
+    text.append(cursor_data[:])                 #TODO enter cursor values
+    while(cursor_data[:5]=='next:'):
+        cursor = cursor_data[:]
+        cursor_data = readUnitFromBlockchain(cursor)
+        text.append(cursor_data[:])
+    text.join('')
+    return text
 
 class GUI:
     
@@ -135,6 +174,7 @@ class GUI:
         print("Shared Keys="+str(shared_key))
         ciphertext = encryptMsg(plaintext,key)
         print("Encrypted Text : " + ciphertext)
+        txid = writeDatatoBlockchain(ciphertext)
         self.PNextButton.destroy()
         messagebox.showinfo("Successful", "Your message is successfully encrypted!!!")
 
@@ -148,10 +188,11 @@ class GUI:
         GL1.grid(row=1,column=1)
         self.GE1 = Spinbox(self.GetFrame, from_ = 2, to = 1000, validate="key", validatecommand=self.vcmd)
         self.GE1.grid(row=1,column=2)
-        GL2 = Label(self.GetFrame,text="Enter Transaction hash : ")
+        GL2 = Label(self.GetFrame,text="Enter Transaction id : ")
         GL2.grid(row=2,column=1)
         self.GE2 = Entry(self.GetFrame)
         self.GE2.grid(row=2,column=2)
+        txid = self.GE2.get()
         self.GFindButton = Button(self.GetFrame,text="Find Secret",command=self.GetSharedKey)
         self.GFindButton.grid(row=3,column=2)
         self.GBackButton=Button(self.GetFrame,text="Back",command=self.Main)
@@ -176,7 +217,8 @@ class GUI:
         self.GDecryptButton.grid(column=2)
 
     def DecryptMsg(self):
-        ciphertext = self.GE2.get()
+        txid = self.GE2.get()
+        ciphertext = readDatafromBlockchain(txid)
         shares = [None] * self.numOfShares
         for i in range(self.numOfShares):
             shares[i] = self.GEArray[i].get()
