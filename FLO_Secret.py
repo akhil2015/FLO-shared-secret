@@ -85,11 +85,11 @@ def writeDatatoBlockchain(text):
 def readDatafromBlockchain(cursor):
     text = []
     cursor_data = readUnitFromBlockchain(cursor)
-    text.append(cursor_data[:])                 #TODO enter cursor values
+    text.append(cursor_data[69:])                  
     while(cursor_data[:5]=='next:'):
-        cursor = cursor_data[:]
+        cursor = cursor_data[5:69]
         cursor_data = readUnitFromBlockchain(cursor)
-        text.append(cursor_data[:])
+        text.append(cursor_data[69:])
     text.join('')
     return text
 
