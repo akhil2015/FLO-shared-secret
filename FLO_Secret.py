@@ -5,6 +5,10 @@ from secretsharing import PlaintextToHexSecretSharer
 import base64
 import os
 from Crypto.Cipher import AES
+import subprocess
+from more_itertools import sliced
+import json
+
 
 # This function splits the secret and returns a list of shares
 def splitSecret(secret,threshold,splits):
@@ -54,7 +58,7 @@ def decryptMsg(ciphertext, key):
     return unpad(cipher.decrypt(ciphertext));
 
 def writeUnitToBlockchain(text,receiver):
-    txid = subprocess.check_output(["flo-cli","--testnet", "sendtoaddress",receiver,"0.01",'""','""',"true","false","10",'UNSET',str(page_html)])
+    txid = subprocess.check_output(["flo-cli","--testnet", "sendtoaddress",receiver,"0.01",'""','""',"true","false","10",'UNSET',str(text)])
     txid = str(txid)
     txid = txid[2:-3]
     return txid
@@ -71,7 +75,7 @@ def readUnitFromBlockchain(txid):
 def writeDatatoBlockchain(text):
     n_splits = len(text)//350 + 1               #number of splits to be created
     splits = list(sliced(text, n_splits))       #create a sliced list of strings
-    tail = writeUnitToBlockchain(splits[n_splits])      #create a transaction which will act as a tail for the data
+    tail = writeUnitToBlockchain(splits[n_splits],'oV9ZoREBSV5gFcZTBEJ7hdbCrDLSb4g96i')      #create a transaction which will act as a tail for the data
     cursor = tail
     if n_splits == 1:
         return cursor                           #if only single transaction was created then tail is the cursor
@@ -175,6 +179,7 @@ class GUI:
         ciphertext = encryptMsg(plaintext,key)
         print("Encrypted Text : " + ciphertext)
         txid = writeDatatoBlockchain(ciphertext)
+        print('txid: ',txid)
         self.PNextButton.destroy()
         messagebox.showinfo("Successful", "Your message is successfully encrypted!!!")
 
