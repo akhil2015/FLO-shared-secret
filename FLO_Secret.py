@@ -74,30 +74,33 @@ def readUnitFromBlockchain(txid):
 
 def writeDatatoBlockchain(text):
     n_splits = len(text)//350 + 1               #number of splits to be created
-    splits = list(sliced(text, 350))
-    print(splits)       #create a sliced list of strings
+    splits = list(sliced(text, 350))          #create a sliced list of strings
+    for split in splits:
+        print(split)
+    print('no.of splits: '+str(n_splits))
     tail = writeUnitToBlockchain(splits[n_splits-1],'oV9ZoREBSV5gFcZTBEJ7hdbCrDLSb4g96i')      #create a transaction which will act as a tail for the data
     cursor = tail
     if n_splits == 1:
         return cursor                           #if only single transaction was created then tail is the cursor
 
     #for each string in the list create a transaction with txid of previous string
-    for i in range(n_splits-1,0):
-        splits[i] = 'next:'+cursor+splits[i]
-        cursor = writeUnitToBlockchain(splits[i])
+    for i in range(n_splits-2,-1,-1):
+        splits[i] = 'next:'+cursor+" "+splits[i]
+        print(splits[i])
+        cursor = writeUnitToBlockchain(splits[i],'oV9ZoREBSV5gFcZTBEJ7hdbCrDLSb4g96i')
     return cursor
 
 def readDatafromBlockchain(cursor):
     text = []
-    cursor_data = readUnitFromBlockchain(cursor)
-    print(cursor_data)                
+    cursor_data = readUnitFromBlockchain(cursor)              
     while(cursor_data[:5]=='next:'):
         cursor = cursor_data[5:69]
+        print("fetching this transaction->>"+cursor)
+        text.append(cursor_data[70:])
         cursor_data = readUnitFromBlockchain(cursor)
-        text.append(cursor_data[69:])
     text.append(cursor_data)
-    text=('').join(text)
     print(text)
+    text=('').join(text)
     return text
 
 class GUI:
