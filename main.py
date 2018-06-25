@@ -81,20 +81,16 @@ def readUnitFromBlockchain(txid):
     return text
 
 def writeDatatoBlockchain(text):
-    n_splits = len(text)//350 + 1               #number of splits to be created
-    splits = list(sliced(text, 350))          #create a sliced list of strings
-    #for split in splits:
-    #    print(split)
-    #print('no.of splits: '+str(n_splits))
-    tail = writeUnitToBlockchain(splits[n_splits-1],'oV9ZoREBSV5gFcZTBEJ7hdbCrDLSb4g96i')      #create a transaction which will act as a tail for the data
+    n_splits = len(text)//350 + 1                                                               #number of splits to be created
+    splits = list(sliced(text, 350))                                                            #create a sliced list of strings
+    tail = writeUnitToBlockchain(splits[n_splits-1],'oV9ZoREBSV5gFcZTBEJ7hdbCrDLSb4g96i')       #create a transaction which will act as a tail for the data
     cursor = tail
     if n_splits == 1:
-        return cursor                           #if only single transaction was created then tail is the cursor
+        return cursor                                                                           #if only single transaction was created then tail is the cursor
 
     #for each string in the list create a transaction with txid of previous string
     for i in range(n_splits-2,-1,-1):
         splits[i] = 'next:'+cursor+" "+splits[i]
-        #print(splits[i])
         cursor = writeUnitToBlockchain(splits[i],'oV9ZoREBSV5gFcZTBEJ7hdbCrDLSb4g96i')
     return cursor
 
@@ -221,7 +217,7 @@ class GUI:
         PostButton.grid(row =3,column=1)
         GetButton = Button(self.MainFrame,text="GET",command=self.Get)
         GetButton.grid(row =3, column=2)
-        contentText = "\n\nWhat is this?\n\tThis app let you save encrypted secret in the FLO blockchain and produces a number of keys that must be combined to be able to decrypt the secret.\n\nThis is a zero knowledge application.\n\tThe creation of the master key and shared keys and the encryption of the secret with the main key happens in the app. The app then sends the encrypted information to be posted in the FLO blockchain. This is the only information sent to our servers. The server reply with the hash of the transaction and the app produces the pdf containing information about the shares and the transaction.\n\nHow to encrypt an information? \n\tCurrently, we are only supporting messages typed or copied to a text area. Click in POST, select the number of total shares and the number of required shares, type or paste the information and click Submit.\n\nHow to decrypt a secret?\n\tClick in GET, type the number of minimum required shares and the hash of the transaction and press Find secret. Then insert the hash of each share and click decrypt. If everything is ok, you should be able to see the decrypted information."
+        contentText = "\n\nWhat is this?\n\tThis app let you save encrypted secret in the FLO blockchain and produces a number of keys that must be combined to be able to decrypt the secret.\n\nThis is a zero knowledge application.\n\tThe creation of the master key and shared keys and the encryption of the secret with the main key happens in the app. The app then writes the encrypted information on the FLO blockchain. And the application generates a pdf with the seceret ID and the shares of the encryption key\n\nHow to encrypt an information? \n\tCurrently, we are only supporting messages typed or copied to a text area. Click in POST, select the number of total shares and the number of required shares, type or paste the information and click Submit.\n\nHow to decrypt a secret?\n\tClick in GET, type the number of minimum required shares and Secret ID and press Find secret. Then insert the hash of each share and click decrypt. If everything is ok, you should be able to see the decrypted information."
         Context = Message(self.MainFrame, text = contentText)
         Context.grid(column = 1, columnspan =2)
         
@@ -270,7 +266,7 @@ class GUI:
             messagebox.showerror("Connection Failed!", "Please run the node(Flo-Core)!")
             return
         self.PNextButton.destroy()
-        messagebox.showinfo("Encryption Successful!", "Your data is successfully encrypted and stored in the FLO Blockchain!\nTx-id : "+txid+"\nPlease wait until the pdfs are generated!")
+        messagebox.showinfo("Encryption Successful!", "Your data is successfully encrypted and stored in the FLO Blockchain!\nSecret-ID : "+txid+"\nPlease wait until the pdfs are generated!")
         try:
             generatePDFmain(splits,threshold,shared_key,txid)
             messagebox.showinfo("PDFs Generated!", "The pdfs containing the details of the transaction hash and shared keys required to retrieve the data are generated!\nTx-id : "+txid)
@@ -289,7 +285,7 @@ class GUI:
         GL1.grid(row=1,column=1)
         self.GE1 = Spinbox(self.GetFrame, from_ = 2, to = 1000, validate="key", validatecommand=self.vcmd)
         self.GE1.grid(row=1,column=2)
-        GL2 = Label(self.GetFrame,text="Enter Transaction hash : ")
+        GL2 = Label(self.GetFrame,text="Enter Secret ID : ")
         GL2.grid(row=2,column=1)
         self.GE2 = Entry(self.GetFrame)
         self.GE2.grid(row=2,column=2)
@@ -304,7 +300,7 @@ class GUI:
             txid = self.GE2.get()
             self.ciphertext = readDatafromBlockchain(txid)
         except:
-            messagebox.showerror("Data retrieval Failed!", "Please enter valid transaction hash!\nAlso run the node(Flo-Core)!")
+            messagebox.showerror("Data retrieval Failed!", "Please enter valid Secret ID \nAlso run the node(Flo-Core)!")
             return
         self.numOfShares = int(self.GE1.get())
         self.GFindButton.destroy()
