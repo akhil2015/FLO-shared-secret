@@ -108,7 +108,7 @@ def readDatafromBlockchain(cursor):
     return text
 
 #This function is for generating the main pdf
-def generatePDFmain(splits,threshold,shared_key,exid):
+def generatePDFmain(splits,threshold,shared_key,txid):
     pdf=FPDF()
     pdf.add_page()
     try:
@@ -124,9 +124,9 @@ def generatePDFmain(splits,threshold,shared_key,exid):
     pdf.multi_cell(0,10,'Powered by the FLO Blockchain',0,'C',False)
     pdf.set_font('Times', '', 16)
     pdf.ln(20)
-    pdf.multi_cell(0,10,'A secret has been encrypted and posted on the blockchain of the FLO cryptocurrency in the the following Encryption ID : ',0,'J',False)
+    pdf.multi_cell(0,10,'A secret has been encrypted and posted on the blockchain of the FLO cryptocurrency and your Secret ID is: ',0,'J',False)
     pdf.set_font('Courier', '', 12)
-    pdf.multi_cell(0,10,str(exid),1,'C',False)
+    pdf.multi_cell(0,10,str(txid),1,'C',False)
     pdf.set_font('Times', '', 16)
     pdf.ln(10)
     pdf.multi_cell(0,10,'The key to decrypt this secret has been split in '+str(splits)+' shares. By design, the secret can be decrypted with any '+str(threshold)+' of these shares.',0,'J',False)
@@ -139,13 +139,13 @@ def generatePDFmain(splits,threshold,shared_key,exid):
     pdf.multi_cell(0,10,'Use the FLO Secret app to decrypt the secret',0,'J',False)
     pdf.multi_cell(0,20,'Download FLO Secret from the below link',0,'J',False)
     pdf.set_font('Courier', '', 14)
-    pdf.cell(0,0 ,'https://github.com/akhil2015/FLO-shared-secret/',0,0,'L',False, "https://github.com/akhil2015/FLO-shared-secret/");
-    filename = 'Flo_Secret_'+exid+'.pdf'
+    pdf.cell(0,0 ,'https://github.com/akhil2015/FLO-shared-secret',0,0,'L',False, "https://github.com/akhil2015/FLO-shared-secret");
+    filename = 'Flo_Secret_'+txid+'.pdf'
     pdf.output(filename,'F')
-    generatePDFshares(splits,threshold,shared_key,exid)
+    generatePDFshares(splits,threshold,shared_key,txid)
 
 #This function is for generating the share pdf
-def generatePDFshares(splits,threshold,shared_key,exid):
+def generatePDFshares(splits,threshold,shared_key,txid):
     for i in range(splits):
         pdf=FPDF()
         pdf.add_page()
@@ -162,9 +162,9 @@ def generatePDFshares(splits,threshold,shared_key,exid):
         pdf.multi_cell(0,10,'Powered by the FLO Blockchain',0,'C',False)
         pdf.set_font('Times', '', 16)
         pdf.ln(20)
-        pdf.multi_cell(0,10,'A secret has been encrypted and posted on the blockchain of the FLO cryptocurrency in the the following Encryption ID : ',0,'J',False)
+        pdf.multi_cell(0,10,'A secret has been encrypted and posted on the blockchain of the FLO cryptocurrency and your Secret ID is : ',0,'J',False)
         pdf.set_font('Courier', '', 12)
-        pdf.multi_cell(0,10,str(exid),1,'C',False)
+        pdf.multi_cell(0,10,str(txid),1,'C',False)
         pdf.set_font('Times', '', 16)
         pdf.ln(10)
         pdf.multi_cell(0,10,'The key to decrypt this secret has been split in '+str(splits)+' shares like this one. By design, the secret can be decrypted with any '+str(threshold)+' of these shares.',0,'J',False)
@@ -177,8 +177,8 @@ def generatePDFshares(splits,threshold,shared_key,exid):
         pdf.multi_cell(0,10,'Use the FLO Secret app to decrypt the secret',0,'J',False)
         pdf.multi_cell(0,20,'Download FLO Secret from the below link',0,'J',False)
         pdf.set_font('Courier', '', 14)
-        pdf.cell(0,0 ,'https://github.com/akhil2015/FLO-shared-secret/',0,0,'L',False, "https://github.com/akhil2015/FLO-shared-secret/");
-        filename = 'Flo_Secret_'+exid+'/sharedkey_'+str(i+1)+'.pdf'
+        pdf.cell(0,0 ,'https://github.com/akhil2015/FLO-shared-secret',0,0,'L',False, "https://github.com/akhil2015/FLO-shared-secret");
+        filename = 'Flo_Secret_'+txid+'/sharedkey_'+str(i+1)+'.pdf'
         os.makedirs(os.path.dirname(filename), exist_ok=True)
         pdf.output(filename,'F')
 class GUI:
@@ -217,7 +217,7 @@ class GUI:
         PostButton.grid(row =3,column=1)
         GetButton = Button(self.MainFrame,text="GET",command=self.Get)
         GetButton.grid(row =3, column=2)
-        contentText = "\n\nWhat is this?\n\tThis app let you save encrypted secret in the FLO blockchain and produces a number of keys that must be combined to be able to decrypt the secret.\n\nThis is a zero knowledge application.\n\tThe creation of the master key and shared keys and the encryption of the secret with the main key happens in the app. The app then writes the encrypted information on the FLO blockchain. And the application generates a pdf with the Encryption ID and the shares of the encryption key\n\nHow to encrypt an information? \n\tCurrently, we are only supporting messages typed or copied to a text area. Click in POST, select the number of total shares and the number of required shares, type or paste the information and click Submit.\n\nHow to decrypt a secret?\n\tClick in GET, type the number of minimum required shares and Encryption ID and press Find secret. Then insert the hash of each share and click decrypt. If everything is ok, you should be able to see the decrypted information."
+        contentText = "\n\nWhat is this?\n\tThis app let you save encrypted secret in the FLO blockchain and produces a number of keys that must be combined to be able to decrypt the secret.\n\nThis is a zero knowledge application.\n\tThe creation of the master key and shared keys and the encryption of the secret with the main key happens in the app. The app then writes the encrypted information on the FLO blockchain. And the application generates a pdf with the seceret ID and the shares of the encryption key\n\nHow to encrypt an information? \n\tCurrently, we are only supporting messages typed or copied to a text area. Click in POST, select the number of total shares and the number of required shares, type or paste the information and click Submit.\n\nHow to decrypt a secret?\n\tClick in GET, type the number of minimum required shares and Secret ID and press Find secret. Then insert the hash of each share and click decrypt. If everything is ok, you should be able to see the decrypted information."
         Context = Message(self.MainFrame, text = contentText)
         Context.grid(column = 1, columnspan =2)
         
@@ -261,18 +261,18 @@ class GUI:
         shared_key = splitSecret(key,threshold,splits)
         ciphertext = encryptMsg(plaintext,key)
         try:
-            exid = writeDatatoBlockchain(ciphertext)
+            txid = writeDatatoBlockchain(ciphertext)
         except:
             messagebox.showerror("Connection Failed!", "Please run the node(Flo-Core)!")
             return
         self.PNextButton.destroy()
-        messagebox.showinfo("Encryption Successful!", "Your data is successfully encrypted and stored in the FLO Blockchain!\nEncryption ID : "+exid+"\nPlease wait until the pdfs are generated!")
+        messagebox.showinfo("Encryption Successful!", "Your data is successfully encrypted and stored in the FLO Blockchain!\nSecret-ID : "+txid+"\nPlease wait until the pdfs are generated!")
         try:
-            generatePDFmain(splits,threshold,shared_key,exid)
-            messagebox.showinfo("PDFs Generated!", "The pdfs containing the details of the Encryption ID and shared keys required to retrieve the data are generated!\nEncryption ID : "+exid)
+            generatePDFmain(splits,threshold,shared_key,txid)
+            messagebox.showinfo("PDFs Generated!", "The pdfs containing the details of the transaction hash and shared keys required to retrieve the data are generated!\nTx-id : "+txid)
         except:
             messagebox.showwarning("PDF Error!", "The pdf generation has failed! \nPlease note the details required to retrive the data manually!")
-            print('Encryption ID : ',exid)
+            print('secret ID : ',txid)
             print('The secret can be decrypted using '+str(threshold)+' of the following '+str(splits)+' shares')
             for i in range(splits):
                 print('Shared Key#'+str(i+1)+" : "+shared_key[i])
@@ -285,11 +285,11 @@ class GUI:
         GL1.grid(row=1,column=1)
         self.GE1 = Spinbox(self.GetFrame, from_ = 2, to = 1000, validate="key", validatecommand=self.vcmd)
         self.GE1.grid(row=1,column=2)
-        GL2 = Label(self.GetFrame,text="Enter Encryption ID : ")
+        GL2 = Label(self.GetFrame,text="Enter Secret ID : ")
         GL2.grid(row=2,column=1)
         self.GE2 = Entry(self.GetFrame)
         self.GE2.grid(row=2,column=2)
-        exid = self.GE2.get()
+        txid = self.GE2.get()
         self.GFindButton = Button(self.GetFrame,text="Find Secret",command=self.GetSharedKey)
         self.GFindButton.grid(row=3,column=2)
         self.GBackButton=Button(self.GetFrame,text="Back",command=self.Main)
@@ -297,10 +297,10 @@ class GUI:
 
     def GetSharedKey(self):
         try:
-            exid = self.GE2.get()
-            self.ciphertext = readDatafromBlockchain(exid)
+            txid = self.GE2.get()
+            self.ciphertext = readDatafromBlockchain(txid)
         except:
-            messagebox.showerror("Data retrieval Failed!", "Please enter valid Encryption ID \nAlso run the node(Flo-Core)!")
+            messagebox.showerror("Data retrieval Failed!", "Please enter valid Secret ID \nAlso run the node(Flo-Core)!")
             return
         self.numOfShares = int(self.GE1.get())
         self.GFindButton.destroy()
