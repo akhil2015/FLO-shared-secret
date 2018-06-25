@@ -217,7 +217,7 @@ class GUI:
         PostButton.grid(row =3,column=1)
         GetButton = Button(self.MainFrame,text="GET",command=self.Get)
         GetButton.grid(row =3, column=2)
-        contentText = "\n\nWhat is this?\n\tThis app let you save encrypted secret in the FLO blockchain and produces a number of keys that must be combined to be able to decrypt the secret.\n\nThis is a zero knowledge application.\n\tThe creation of the master key and shared keys and the encryption of the secret with the main key happens in the app. The app then writes the encrypted information on the FLO blockchain. And the application generates a pdf with the seceret ID and the shares of the encryption key\n\nHow to encrypt an information? \n\tCurrently, we are only supporting messages typed or copied to a text area. Click in POST, select the number of total shares and the number of required shares, type or paste the information and click Submit.\n\nHow to decrypt a secret?\n\tClick in GET, type the number of minimum required shares and Secret ID and press Find secret. Then insert the hash of each share and click decrypt. If everything is ok, you should be able to see the decrypted information."
+        contentText = "\n\nWhat is this?\n\tThis app let you save encrypted secret in the FLO blockchain and produces a number of keys that must be combined to be able to decrypt the secret.\n\nThis is a zero knowledge application.\n\tThe creation of the master key and shared keys and the encryption of the secret with the main key happens in the app. The app then writes the encrypted information on the FLO blockchain. And the application generates a pdf with the secret ID and the shares of the encryption key\n\nHow to encrypt an information? \n\tCurrently, we are only supporting messages typed or copied to a text area. Click in POST, select the number of total shares and the number of required shares, type or paste the information and click Submit.\n\nHow to decrypt a secret?\n\tClick in GET, type the number of minimum required shares and Secret ID and press Find secret. Then insert the hash of each share and click decrypt. If everything is ok, you should be able to see the decrypted information."
         Context = Message(self.MainFrame, text = contentText)
         Context.grid(column = 1, columnspan =2)
         
@@ -266,13 +266,13 @@ class GUI:
             messagebox.showerror("Connection Failed!", "Please run the node(Flo-Core)!")
             return
         self.PNextButton.destroy()
-        messagebox.showinfo("Encryption Successful!", "Your data is successfully encrypted and stored in the FLO Blockchain!\nSecret-ID : "+txid+"\nPlease wait until the pdfs are generated!")
+        messagebox.showinfo("Encryption Successful!", "Your data is successfully encrypted and stored in the FLO Blockchain!\nSecret ID : "+txid+"\nPlease wait until the pdfs are generated!")
         try:
             generatePDFmain(splits,threshold,shared_key,txid)
-            messagebox.showinfo("PDFs Generated!", "The pdfs containing the details of the transaction hash and shared keys required to retrieve the data are generated!\nTx-id : "+txid)
+            messagebox.showinfo("PDFs Generated!", "The pdfs containing the details of the transaction hash and shared keys required to retrieve the data are generated!\nSecret ID : "+txid)
         except:
             messagebox.showwarning("PDF Error!", "The pdf generation has failed! \nPlease note the details required to retrive the data manually!")
-            print('secret ID : ',txid)
+            print('Secret ID : ',txid)
             print('The secret can be decrypted using '+str(threshold)+' of the following '+str(splits)+' shares')
             for i in range(splits):
                 print('Shared Key#'+str(i+1)+" : "+shared_key[i])
