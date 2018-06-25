@@ -8,9 +8,7 @@ from Crypto.Cipher import AES
 import subprocess
 from more_itertools import sliced
 import json
-
-
-###Utility function###
+from fpdf import FPDF
 
 # This function splits the secret and returns a list of shares
 def splitSecret(secret,threshold,splits):
@@ -83,17 +81,17 @@ def readUnitFromBlockchain(txid):
     return text
 
 def writeDatatoBlockchain(text):
-    n_splits = len(text)//350 + 1                                                               #number of splits to be created
-    splits = list(sliced(text, 350))                                                            #create a sliced list of strings
+    n_splits = len(text)//350 + 1               #number of splits to be created
+    splits = list(sliced(text, 350))          #create a sliced list of strings
     #for split in splits:
     #    print(split)
     #print('no.of splits: '+str(n_splits))
-    tail = writeUnitToBlockchain(splits[n_splits-1],'oV9ZoREBSV5gFcZTBEJ7hdbCrDLSb4g96i')       #create a transaction which will act as a tail for the data
+    tail = writeUnitToBlockchain(splits[n_splits-1],'oV9ZoREBSV5gFcZTBEJ7hdbCrDLSb4g96i')      #create a transaction which will act as a tail for the data
     cursor = tail
     if n_splits == 1:
-        return cursor                                                                           #if only single transaction was created then tail is the cursor
+        return cursor                           #if only single transaction was created then tail is the cursor
 
-                                                                                                #for each string in the list create a transaction with txid of previous string
+    #for each string in the list create a transaction with txid of previous string
     for i in range(n_splits-2,-1,-1):
         splits[i] = 'next:'+cursor+" "+splits[i]
         #print(splits[i])
@@ -113,11 +111,80 @@ def readDatafromBlockchain(cursor):
     text=('').join(text)
     return text
 
+#This function is for generating the main pdf
+def generatePDFmain(splits,threshold,shared_key,txid):
+    pdf=FPDF()
+    pdf.add_page()
+    try:
+        pdf.image('Flo.png',80,20,33)
+        pdf.ln(50)
+    except:
+        pdf.set_font('Courier', '', 12)
+        pdf.cell(40,40,'No Image',1,10,'C')
+        pdf.ln(10)
+    pdf.set_font('Courier', '', 50)
+    pdf.multi_cell(0,10,'FLO Secret',0,'C',False)
+    pdf.set_font('Courier', '', 12)
+    pdf.multi_cell(0,10,'Powered by the FLO Blockchain',0,'C',False)
+    pdf.set_font('Times', '', 16)
+    pdf.ln(20)
+    pdf.multi_cell(0,10,'A secret has been encrypted and posted on the blockchain of the FLO cryptocurrency in the the following transaction : ',0,'J',False)
+    pdf.set_font('Courier', '', 12)
+    pdf.multi_cell(0,10,str(txid),1,'C',False)
+    pdf.set_font('Times', '', 16)
+    pdf.ln(10)
+    pdf.multi_cell(0,10,'The key to decrypt this secret has been split in '+str(splits)+' shares. By design, the secret can be decrypted with any '+str(threshold)+' of these shares.',0,'J',False)
+    for i in range(splits):
+        pdf.set_font('Courier', '', 12)
+        pdf.multi_cell(0,5,str(shared_key[i]),1,'L',False)
+        pdf.ln(5)
+    pdf.set_font('Times', '', 16)
+    pdf.ln(10)
+    pdf.multi_cell(0,10,'Use the FLO Secret app to decrypt the secret',0,'J',False)
+    pdf.multi_cell(0,20,'Download FLO Secret from the below link',0,'J',False)
+    pdf.set_font('Courier', '', 14)
+    pdf.cell(0,0 ,'https://github.com/akhil2015/FLOShamir/',0,0,'L',False, "https://github.com/akhil2015/FLOShamir/");
+    filename = 'Flo_Secret_'+txid+'.pdf'
+    pdf.output(filename,'F')
+    generatePDFshares(splits,threshold,shared_key,txid)
 
-###START OF GUI###
-
-
-
+#This function is for generating the share pdf
+def generatePDFshares(splits,threshold,shared_key,txid):
+    for i in range(splits):
+        pdf=FPDF()
+        pdf.add_page()
+        try:
+            pdf.image('Flo.png',80,20,33)
+            pdf.ln(50)
+        except:
+            pdf.set_font('Courier', '', 12)
+            pdf.cell(40,40,'No Image',1,10,'C')
+            pdf.ln(10)
+        pdf.set_font('Courier', '', 50)
+        pdf.multi_cell(0,10,'FLO Secret',0,'C',False)
+        pdf.set_font('Courier', '', 12)
+        pdf.multi_cell(0,10,'Powered by the FLO Blockchain',0,'C',False)
+        pdf.set_font('Times', '', 16)
+        pdf.ln(20)
+        pdf.multi_cell(0,10,'A secret has been encrypted and posted on the blockchain of the FLO cryptocurrency in the the following transaction : ',0,'J',False)
+        pdf.set_font('Courier', '', 12)
+        pdf.multi_cell(0,10,str(txid),1,'C',False)
+        pdf.set_font('Times', '', 16)
+        pdf.ln(10)
+        pdf.multi_cell(0,10,'The key to decrypt this secret has been split in '+str(splits)+' shares like this one. By design, the secret can be decrypted with any '+str(threshold)+' of these shares.',0,'J',False)
+        pdf.ln(10)
+        pdf.multi_cell(0,10,'Below is the part of the key that belongs to this share',0,'J',False)
+        pdf.set_font('Courier', '', 12)
+        pdf.multi_cell(0,5,str(shared_key[i]),1,'L',False)
+        pdf.set_font('Times', '', 16)
+        pdf.ln(10)
+        pdf.multi_cell(0,10,'Use the FLO Secret app to decrypt the secret',0,'J',False)
+        pdf.multi_cell(0,20,'Download FLO Secret from the below link',0,'J',False)
+        pdf.set_font('Courier', '', 14)
+        pdf.cell(0,0 ,'https://github.com/akhil2015/FLOShamir/',0,0,'L',False, "https://github.com/akhil2015/FLOShamir/");
+        filename = 'Flo_Secret_'+txid+'/sharedkey_'+str(i+1)+'.pdf'
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+        pdf.output(filename,'F')
 class GUI:
     
     def __init__(self, root):
@@ -202,12 +269,17 @@ class GUI:
         except:
             messagebox.showerror("Connection Failed!", "Please run the node(Flo-Core)!")
             return
-        print("Shared Keys="+str(shared_key))
-        print('txid: ',txid)
         self.PNextButton.destroy()
-        messagebox.showinfo("Successful!", "Your data is successfully encrypted and stored in the FLO Blockchain!")
-
-        
+        messagebox.showinfo("Encryption Successful!", "Your data is successfully encrypted and stored in the FLO Blockchain!\nTx-id : "+txid+"\nPlease wait until the pdfs are generated!")
+        try:
+            generatePDFmain(splits,threshold,shared_key,txid)
+            messagebox.showinfo("PDFs Generated!", "The pdfs containing the details of the transaction hash and shared keys required to retrieve the data are generated!\nTx-id : "+txid)
+        except:
+            messagebox.showwarning("PDF Error!", "The pdf generation has failed! \nPlease note the details required to retrive the data manually!")
+            print('txid : ',txid)
+            print('The secret can be decrypted using '+str(threshold)+' of the following '+str(splits)+' shares')
+            for i in range(splits):
+                print('Shared Key#'+str(i+1)+" : "+shared_key[i])
 
     def Get(self):
         self.MainFrame.destroy()
