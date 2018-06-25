@@ -254,14 +254,14 @@ class GUI:
         if (threshold > splits or threshold<2) :
             messagebox.showwarning("Invalid!", "Minimum-Shares-Required should be greater than 2 and lesser than or equal to Total-Shares")
             return
-        self.PE1.config(state='disabled')
-        self.PE2.config(state='disabled')
-        self.PTextBox.config(state='disabled')
         key = keyGen() 
         plaintext = self.PTextBox.get("1.0",'end-1c')
         if (plaintext== ""):
             messagebox.showwarning("Invalid!","Message Text Box Cannot Be Left Blank!")
             return
+        self.PE1.config(state='disabled')
+        self.PE2.config(state='disabled')
+        self.PTextBox.config(state='disabled')
         shared_key = splitSecret(key,threshold,splits)
         ciphertext = encryptMsg(plaintext,key)
         try:
@@ -348,10 +348,11 @@ class GUI:
         self.GLMsg.pack(side = LEFT)
         GScroll.pack(side = RIGHT,fill = Y)
         GTextFrame.grid(column=1,columnspan=2)
+        self.CopyButton = Button(self.GetFrame, text="Copy", command=pyperclip.copy(plaintext))
+        self.CopyButton.grid(column=1)
         self.GBackButton=Button(self.GetFrame,text="Back",command=self.Main)
         self.GBackButton.grid(column=1)
-        self.CopyButton=Button(self.GetFrame,text="Copy",command=pyperclip.copy(plaintext))
-        self.CopyButton.grid(column=1)
+
 
 root = Tk()
 root.title("FloSecret")
