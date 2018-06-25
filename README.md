@@ -11,7 +11,7 @@ Storing secrets on the blockchain makes sure that the file can't be altered and 
 **WARNING: Currently the app is using the testnet**
 
 ## Usage
-1. Clone/download this repository. (https://github.com/akhil2015/FLOShamir/)
+1. Clone/download this repository. (https://github.com/akhil2015/FLO-shared-secret/)
 2. Run the binary file inside bin folder. (bin/FLO_Secret)
 
 **To create a shared-secret**
