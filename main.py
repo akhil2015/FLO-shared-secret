@@ -125,7 +125,7 @@ def generatePDFmain(splits,threshold,shared_key,txid):
     pdf.multi_cell(0,10,'Powered by the FLO Blockchain',0,'C',False)
     pdf.set_font('Times', '', 16)
     pdf.ln(20)
-    pdf.multi_cell(0,10,'A secret has been encrypted and posted on the blockchain of the FLO cryptocurrency and your Secret ID is: ',0,'J',False)
+    pdf.multi_cell(0,10,'A secret has been encrypted and stored on the blockchain of the FLO cryptocurrency and your Secret ID is: ',0,'J',False)
     pdf.set_font('Courier', '', 12)
     pdf.multi_cell(0,10,str(txid),1,'C',False)
     pdf.set_font('Times', '', 16)
@@ -163,7 +163,7 @@ def generatePDFshares(splits,threshold,shared_key,txid):
         pdf.multi_cell(0,10,'Powered by the FLO Blockchain',0,'C',False)
         pdf.set_font('Times', '', 16)
         pdf.ln(20)
-        pdf.multi_cell(0,10,'A secret has been encrypted and posted on the blockchain of the FLO cryptocurrency and your Secret ID is : ',0,'J',False)
+        pdf.multi_cell(0,10,'A secret has been encrypted and stored on the blockchain of the FLO cryptocurrency and your Secret ID is : ',0,'J',False)
         pdf.set_font('Courier', '', 12)
         pdf.multi_cell(0,10,str(txid),1,'C',False)
         pdf.set_font('Times', '', 16)
@@ -201,11 +201,11 @@ class GUI:
 
     def Main(self):
         try:
-            self.PostFrame.destroy()
+            self.CSFrame.destroy()
         except:
             None
         try:
-            self.GetFrame.destroy()
+            self.DSFrame.destroy()
         except:
             None
         self.MainFrame = Frame(self.root, height=1000,width=500)
@@ -214,39 +214,39 @@ class GUI:
         WelcomeLabel.grid(column = 1, columnspan =2)
         label =Label(self.MainFrame,text=" ")
         label.grid(row = 2, columnspan =2)
-        PostButton = Button(self.MainFrame,text="POST",command=self.Post)
-        PostButton.grid(row =3,column=1)
-        GetButton = Button(self.MainFrame,text="GET",command=self.Get)
-        GetButton.grid(row =3, column=2)
-        contentText = "\n\nWhat is this?\n\tThis app let you save encrypted secret in the FLO blockchain and produces a number of keys that must be combined to be able to decrypt the secret.\n\nThis is a zero knowledge application.\n\tThe creation of the master key and shared keys and the encryption of the secret with the main key happens in the app. The app then writes the encrypted information on the FLO blockchain. And the application generates a pdf with the secret ID and the shares of the encryption key\n\nHow to encrypt an information? \n\tCurrently, we are only supporting messages typed or copied to a text area. Click in POST, select the number of total shares and the number of required shares, type or paste the information and click Submit.\n\nHow to decrypt a secret?\n\tClick in GET, type the number of minimum required shares and Secret ID and press Find secret. Then insert the hash of each share and click decrypt. If everything is ok, you should be able to see the decrypted information."
+        CSButton = Button(self.MainFrame,text="Create Secret",command=self.CreateSecret)
+        CSButton.grid(row =3,column=1)
+        DSButton = Button(self.MainFrame,text="Decode Secret",command=self.DecodeSecret)
+        DSButton.grid(row =3, column=2)
+        contentText = "\n\nWhat is this?\n\tThis app let you save encrypted secret in the FLO blockchain and produces a number of keys that must be combined to be able to decrypt the secret.\n\nThis is a zero knowledge application.\n\tThe creation of the master key and shared keys and the encryption of the secret with the main key happens in the app. The app then writes the encrypted information on the FLO blockchain. And the application generates a pdf with the secret ID and the shares of the encryption key\n\nHow to encrypt an information? \n\tCurrently, we are only supporting messages typed or copied to a text area. Click in CREATE SECRET, select the number of total shares and the number of required shares, type or paste the information and click Submit.\n\nHow to decrypt a secret?\n\tClick in DECODE SECRET, type the number of minimum required shares and Secret ID and press Find secret. Then insert the hash of each share and click decrypt. If everything is ok, you should be able to see the decrypted information."
         Context = Message(self.MainFrame, text = contentText)
         Context.grid(column = 1, columnspan =2)
         
-    def Post(self):
+    def CreateSecret(self):
         self.MainFrame.destroy()
-        self.PostFrame = Frame(self.root)
-        self.PostFrame.pack()
-        PL1 = Label(self.PostFrame,text="Enter Total Number of shares : ")
+        self.CSFrame = Frame(self.root)
+        self.CSFrame.pack()
+        PL1 = Label(self.CSFrame,text="Enter Total Number of shares : ")
         PL1.grid(row=1, column =1)
-        self.PE1 = Spinbox(self.PostFrame, from_ = 2, to = 1000, validate="key", validatecommand=self.vcmd)
+        self.PE1 = Spinbox(self.CSFrame, from_ = 2, to = 1000, validate="key", validatecommand=self.vcmd)
         self.PE1.grid(row=1, column =2)
-        PL2 = Label(self.PostFrame,text="Enter Minimum Number of required shares : ")
+        PL2 = Label(self.CSFrame,text="Enter Minimum Number of required shares : ")
         PL2.grid(row=2, column =1)
-        self.PE2 = Spinbox(self.PostFrame, from_ = 2, to = 1000, validate="key", validatecommand=self.vcmd)
+        self.PE2 = Spinbox(self.CSFrame, from_ = 2, to = 1000, validate="key", validatecommand=self.vcmd)
         self.PE2.grid(row=2, column =2)
-        PL3 = Label(self.PostFrame,text="Enter the message to be encrypted")
+        PL3 = Label(self.CSFrame,text="Enter the message to be encrypted")
         PL3.grid(row=3, column =1, columnspan=2)
-        PTextFrame = Frame(self.PostFrame)
+        PTextFrame = Frame(self.CSFrame)
         PScroll = Scrollbar(PTextFrame)
         PScroll.pack(side=RIGHT, fill=Y)
         self.PTextBox = Text(PTextFrame, height=10, width=50,yscrollcommand=PScroll.set)
         self.PTextBox.pack(side = LEFT)
         PScroll.config(command=self.PTextBox.yview)
         PTextFrame.grid(column=1,columnspan=2)
-        PBackButton = Button(self.PostFrame,text="Back",command=self.Main)
-        PBackButton.grid(row=5, column =1)
-        self.PNextButton = Button(self.PostFrame,text="Submit",command=self.Encryption)
-        self.PNextButton.grid(row=5, column =2)
+        self.PNextButton = Button(self.CSFrame,text="Submit",command=self.Encryption)
+        self.PNextButton.grid(column =1,columnspan=2)
+        PBackButton = Button(self.CSFrame,text="Back",command=self.Main)
+        PBackButton.grid(column =1)
 
     def Encryption(self):
         splits = int(self.PE1.get())
@@ -281,22 +281,22 @@ class GUI:
             for i in range(splits):
                 print('Shared Key#'+str(i+1)+" : "+shared_key[i])
 
-    def Get(self):
+    def DecodeSecret(self):
         self.MainFrame.destroy()
-        self.GetFrame = Frame(self.root)
-        self.GetFrame.pack()
-        GL1 = Label(self.GetFrame,text="Enter Number of required shares :  ")
+        self.DSFrame = Frame(self.root)
+        self.DSFrame.pack()
+        GL1 = Label(self.DSFrame,text="Enter Number of required shares :  ")
         GL1.grid(row=1,column=1)
-        self.GE1 = Spinbox(self.GetFrame, from_ = 2, to = 1000, validate="key", validatecommand=self.vcmd)
+        self.GE1 = Spinbox(self.DSFrame, from_ = 2, to = 1000, validate="key", validatecommand=self.vcmd)
         self.GE1.grid(row=1,column=2)
-        GL2 = Label(self.GetFrame,text="Enter Secret ID : ")
+        GL2 = Label(self.DSFrame,text="Enter Secret ID : ")
         GL2.grid(row=2,column=1)
-        self.GE2 = Entry(self.GetFrame)
+        self.GE2 = Entry(self.DSFrame)
         self.GE2.grid(row=2,column=2)
         txid = self.GE2.get()
-        self.GFindButton = Button(self.GetFrame,text="Find Secret",command=self.GetSharedKey)
+        self.GFindButton = Button(self.DSFrame,text="Find Secret",command=self.GetSharedKey)
         self.GFindButton.grid(row=3,column=2)
-        self.GBackButton=Button(self.GetFrame,text="Back",command=self.Main)
+        self.GBackButton=Button(self.DSFrame,text="Back",command=self.Main)
         self.GBackButton.grid(row=3,column=1)
 
     def GetSharedKey(self):
@@ -314,15 +314,15 @@ class GUI:
         GLArray = [None] * self.numOfShares
         self.GEArray = [None] * self.numOfShares
         for i in range(self.numOfShares):
-            GLArray[i] = Label(self.GetFrame, text="Shared key #"+str(i+1))
+            GLArray[i] = Label(self.DSFrame, text="Shared key #"+str(i+1))
             GLArray[i].grid(column=1)
-            self.GEArray[i] = Entry(self.GetFrame)
+            self.GEArray[i] = Entry(self.DSFrame)
             self.GEArray[i].grid(column=2)
-        self.GBackButton=Button(self.GetFrame,text="Back",command=self.Main)
+        self.GDecryptButton = Button(self.DSFrame,text="Decrypt",command=self.DecryptMsg)
+        self.GDecryptButton.grid(column=1,columnspan=2)
+        self.GBackButton=Button(self.DSFrame,text="Back",command=self.Main)
         self.GBackButton.grid(column=1)
-        self.GDecryptButton = Button(self.GetFrame,text="Decrypt",command=self.DecryptMsg)
-        self.GDecryptButton.grid(column=2)
-
+        
     def DecryptMsg(self):
         shares = [None] * self.numOfShares
         for i in range(self.numOfShares):
@@ -337,9 +337,9 @@ class GUI:
             shares[i] = self.GEArray[i].config(state='disabled')
         self.GDecryptButton.destroy()
         self.GBackButton.destroy()
-        GL3 = Label(self.GetFrame, text="Found Secret Message")
+        GL3 = Label(self.DSFrame, text="Found Secret Message")
         GL3.grid(column=1, columnspan=2)       
-        GTextFrame = Frame(self.GetFrame)
+        GTextFrame = Frame(self.DSFrame)
         GScroll = Scrollbar(GTextFrame)
         GScroll.pack(side=RIGHT, fill=Y)
         self.GLMsg = Text(GTextFrame,height=10,width=50,yscrollcommand=GScroll.set)
@@ -348,16 +348,13 @@ class GUI:
         self.GLMsg.pack(side = LEFT)
         GTextFrame.grid(column=1,columnspan=2)
         GScroll.config(command=self.GLMsg.yview)
-        self.CopyButton = Button(self.GetFrame, text="Copy", command=pyperclip.copy(plaintext))
-        self.CopyButton.grid(column=1)
-        self.GBackButton=Button(self.GetFrame,text="Back",command=self.Main)
+        self.CopyButton = Button(self.DSFrame, text="Copy", command=pyperclip.copy(plaintext))
+        self.CopyButton.grid(column=1,columnspan=2)
+        self.GBackButton=Button(self.DSFrame,text="Back",command=self.Main)
         self.GBackButton.grid(column=1)
-
 
 root = Tk()
 root.title("FloSecret")
 gui = GUI(root)
 gui.Main()
 root.mainloop()
-    
-        
