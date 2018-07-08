@@ -66,8 +66,8 @@ def decryptMsg(ciphertext, key):
     plaintext = (base64.b64decode(plaintext)).decode('utf-8')
     return plaintext
 
-def writeUnitToBlockchain(text,receiver):
-    txid = subprocess.check_output(["flo-cli","--testnet", "sendtoaddress",receiver,"0.01",'""','""',"true","false","10",'UNSET',str(text)])
+def writeUnitToBlockchain(text,receiver,amt):
+    txid = subprocess.check_output(["flo-cli","--testnet", "sendtoaddress",receiver,str(amt),'""','""',"true","false","10",'UNSET',str(text)])
     txid = str(txid)
     txid = txid[2:-3]
     return txid
@@ -81,10 +81,10 @@ def readUnitFromBlockchain(txid):
     text = content['floData']
     return text
 
-def writeDatatoBlockchain(text):
+def writeDatatoBlockchain(text,receiver,amt):
     n_splits = len(text)//350 + 1                                                               #number of splits to be created
     splits = list(sliced(text, 350))                                                            #create a sliced list of strings
-    tail = writeUnitToBlockchain(splits[n_splits-1],'oV9ZoREBSV5gFcZTBEJ7hdbCrDLSb4g96i')       #create a transaction which will act as a tail for the data
+    tail = writeUnitToBlockchain(splits[n_splits-1],receiver,amt)       #create a transaction which will act as a tail for the data
     cursor = tail
     if n_splits == 1:
         return cursor                                                                           #if only single transaction was created then tail is the cursor
@@ -92,7 +92,7 @@ def writeDatatoBlockchain(text):
     #for each string in the list create a transaction with txid of previous string
     for i in range(n_splits-2,-1,-1):
         splits[i] = 'next:'+cursor+" "+splits[i]
-        cursor = writeUnitToBlockchain(splits[i],'oV9ZoREBSV5gFcZTBEJ7hdbCrDLSb4g96i')
+        cursor = writeUnitToBlockchain(splits[i],receiver,amt)
     return cursor
 
 def readDatafromBlockchain(cursor):
@@ -226,6 +226,8 @@ class GUI:
         self.MainFrame.destroy()
         self.CSFrame = Frame(self.root)
         self.CSFrame.pack()
+        self.RepAddr = 'oV9ZoREBSV5gFcZTBEJ7hdbCrDLSb4g96i'
+        self.SendAmt = 0.01
         PL1 = Label(self.CSFrame,text="Enter Total Number of shares : ")
         PL1.grid(row=1, column =1)
         self.PE1 = Spinbox(self.CSFrame, from_ = 2, to = 1000, validate="key", validatecommand=self.vcmd)
@@ -234,8 +236,10 @@ class GUI:
         PL2.grid(row=2, column =1)
         self.PE2 = Spinbox(self.CSFrame, from_ = 2, to = 1000, validate="key", validatecommand=self.vcmd)
         self.PE2.grid(row=2, column =2)
+        self.PSettingsButton = Button(self.CSFrame,text="Settings",command=self.Settings)
+        self.PSettingsButton.grid(row=3,column =1,columnspan=2)
         PL3 = Label(self.CSFrame,text="Enter the message to be encrypted")
-        PL3.grid(row=3, column =1, columnspan=2)
+        PL3.grid(row=4, column =1, columnspan=2)
         PTextFrame = Frame(self.CSFrame)
         PScroll = Scrollbar(PTextFrame)
         PScroll.pack(side=RIGHT, fill=Y)
@@ -247,7 +251,39 @@ class GUI:
         self.PNextButton.grid(column =1,columnspan=2)
         PBackButton = Button(self.CSFrame,text="Back",command=self.Main)
         PBackButton.grid(column =1)
+    
+    def Settings(self):
+        self.PSettingsButton.config(state='disabled')
+        self.top = Toplevel()
+        self.top.title("Settings")
+        SFrame = Frame(self.top)
+        SFrame.pack()
+        SL1 = Label(SFrame,text="Enter recipient address :  ")
+        SL1.grid(row=1,column=1)
+        self.SE1 = Entry(SFrame)
+        self.SE1.grid(row=1,column=2)
+        SL2 = Label(SFrame,text="Enter FLO amount : ")
+        SL2.grid(row=2,column=1)
+        self.SE2 = Entry(SFrame)
+        self.SE2.grid(row=2,column=2)
+        SOkButton = Button(SFrame,text="Ok",command=self.ConfigSettings)
+        SOkButton.grid(row=3,column =1)
+        SCancelButton = Button(SFrame,text="Cancel",command=self.CancelSettings)
+        SCancelButton.grid(row=3,column =2)
 
+    def ConfigSettings(self):
+        self.RepAddr = self.SE1.get()
+        try:
+            self.SendAmt = float(self.SE2.get())
+            self.top.destroy()
+            self.PSettingsButton.config(state='normal')
+        except:
+            messagebox.showwarning("Invalid!", "FLO amount should be number")
+
+    def CancelSettings(self):
+        self.top.destroy()
+        self.PSettingsButton.config(state='normal')
+    
     def Encryption(self):
         splits = int(self.PE1.get())
         threshold = int(self.PE2.get())
@@ -265,7 +301,7 @@ class GUI:
         shared_key = splitSecret(key,threshold,splits)
         ciphertext = encryptMsg(plaintext,key)
         try:
-            txid = writeDatatoBlockchain(ciphertext)
+            txid = writeDatatoBlockchain(ciphertext,self.RepAddr,self.SendAmt)
         except:
             messagebox.showerror("Connection Failed!", "Please run the node(Flo-Core)!")
             return
